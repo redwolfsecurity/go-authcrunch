@@ -39,7 +39,7 @@ import (
 func (p *Portal) handleHTTPLogin(ctx context.Context, w http.ResponseWriter, r *http.Request, rr *requests.Request, usr *user.User) error {
 	p.injectRedirectURL(ctx, w, r, rr)
 	if usr != nil {
-		return p.handleHTTPRedirect(ctx, w, r, rr, "/portal")
+		return p.handleHTTPRedirectExternal(ctx, w, r, rr, p.login_redirect_url_default_get(rr))
 	}
 	if r.Method == http.MethodPost {
 		return p.handleHTTPLoginRequest(ctx, w, r, rr)
@@ -398,8 +398,7 @@ func (p *Portal) grantAccess(_ context.Context, w http.ResponseWriter, r *http.R
 		w.Header().Add("Set-Cookie", p.cookie.GetDeleteRefererCookie(rr.Upstream.BasePath))
 	}
 	if redirectLocation == "" {
-		// Redirect authenticated user to portal page when no redirect cookie found.
-		redirectLocation = rr.Upstream.BaseURL + path.Join(rr.Upstream.BasePath, "/portal")
+		redirectLocation = p.login_redirect_url_default_get(rr)
 	}
 	w.Header().Set("Location", redirectLocation)
 	rr.Response.Code = http.StatusSeeOther

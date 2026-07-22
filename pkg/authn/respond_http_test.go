@@ -223,7 +223,7 @@ func TestRefererSchemeValidation(t *testing.T) {
 	}
 }
 
-func buildGrantAccessPortal(trustedConfigs []*redirects.RedirectURIMatchConfig) (*Portal, error) {
+func buildGrantAccessPortal(trustedConfigs []*redirects.RedirectURIMatchConfig, autoRedirectURL string) (*Portal, error) {
 	f, err := cookie.NewFactory(nil)
 	if err != nil {
 		return nil, err
@@ -241,6 +241,7 @@ func buildGrantAccessPortal(trustedConfigs []*redirects.RedirectURIMatchConfig) 
 	return &Portal{
 		config: &PortalConfig{
 			Name:                           "testPortal",
+			UI:                             &ui.Parameters{AutoRedirectURL: autoRedirectURL},
 			TrustedLoginRedirectURIConfigs: trustedConfigs,
 		},
 		logger:   zap.L(),
@@ -257,26 +258,41 @@ func TestGrantAccessRedirectCookieValidation(t *testing.T) {
 	}
 
 	var testcases = []struct {
-		name           string
-		cookieValue    string
-		trustedConfigs []*redirects.RedirectURIMatchConfig
-		wantLocation   string
+		name            string
+		cookieValue     string
+		autoRedirectURL string
+		trustedConfigs  []*redirects.RedirectURIMatchConfig
+		wantLocation    string
 	}{
 		{
-			name:           "trusted redirect cookie honored",
-			cookieValue:    "https://app.example.com/dashboard",
-			trustedConfigs: []*redirects.RedirectURIMatchConfig{trustedConfig},
-			wantLocation:   "https://app.example.com/dashboard",
+			name:            "trusted redirect cookie honored",
+			cookieValue:     "https://app.example.com/dashboard",
+			autoRedirectURL: "/",
+			trustedConfigs:  []*redirects.RedirectURIMatchConfig{trustedConfig},
+			wantLocation:    "https://app.example.com/dashboard",
 		},
 		{
-			name:           "untrusted redirect cookie rejected",
-			cookieValue:    "https://evil.example.com/steal",
-			trustedConfigs: []*redirects.RedirectURIMatchConfig{trustedConfig},
-			wantLocation:   "/portal",
+			name:            "untrusted redirect cookie rejected",
+			cookieValue:     "https://evil.example.com/steal",
+			autoRedirectURL: "/",
+			trustedConfigs:  []*redirects.RedirectURIMatchConfig{trustedConfig},
+			wantLocation:    "https://auth.example.com/",
 		},
 		{
-			name:           "no trust configs rejects cookie",
-			cookieValue:    "https://app.example.com/dashboard",
+			name:            "no trust configs rejects cookie",
+			cookieValue:     "https://app.example.com/dashboard",
+			autoRedirectURL: "/",
+			trustedConfigs:  nil,
+			wantLocation:    "https://auth.example.com/",
+		},
+		{
+			name:            "configured default used without redirect cookie",
+			autoRedirectURL: "/",
+			trustedConfigs:  []*redirects.RedirectURIMatchConfig{trustedConfig},
+			wantLocation:    "https://auth.example.com/",
+		},
+		{
+			name:           "unset default retains authentication portal",
 			trustedConfigs: nil,
 			wantLocation:   "/portal",
 		},
@@ -284,7 +300,7 @@ func TestGrantAccessRedirectCookieValidation(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			p, err := buildGrantAccessPortal(tc.trustedConfigs)
+			p, err := buildGrantAccessPortal(tc.trustedConfigs, tc.autoRedirectURL)
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
@@ -295,7 +311,9 @@ func TestGrantAccessRedirectCookieValidation(t *testing.T) {
 				Host:   "auth.example.com",
 				Header: http.Header{},
 			}
-			r.AddCookie(&http.Cookie{Name: p.cookie.RefererCookieName, Value: tc.cookieValue})
+			if tc.cookieValue != "" {
+				r.AddCookie(&http.Cookie{Name: p.cookie.RefererCookieName, Value: tc.cookieValue})
+			}
 			rr := requests.NewRequest()
 			rr.Upstream.SessionID = "test-session"
 			rr.Upstream.BasePath = "/"

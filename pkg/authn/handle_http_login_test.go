@@ -15,12 +15,39 @@
 package authn
 
 import (
+	"context"
+	"net/http"
+	"net/url"
 	"testing"
 
 	"github.com/greenpau/go-authcrunch/internal/tests"
 	"github.com/greenpau/go-authcrunch/pkg/authchal"
+	"github.com/greenpau/go-authcrunch/pkg/requests"
 	"github.com/greenpau/go-authcrunch/pkg/user"
 )
+
+func Test_Handle_HTTP_Login_Authenticated_Redirect_Default(t *testing.T) {
+	p, err := buildGrantAccessPortal(nil, "/")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	rw := buildCustomResponseWriter()
+	r := &http.Request{
+		URL:    &url.URL{Scheme: "https", Host: "auth.example.com", Path: "/aaa/login"},
+		Method: http.MethodGet,
+		Host:   "auth.example.com",
+		Header: http.Header{},
+	}
+	rr := requests.NewRequest()
+	rr.Upstream.SessionID = "test-session"
+	rr.Upstream.BasePath = "/aaa"
+	rr.Upstream.BaseURL = "https://auth.example.com"
+
+	err = p.handleHTTPLogin(context.Background(), rw, r, rr, &user.User{})
+	tests.EvalObjectsWithLog(t, "error", nil, err, []string{})
+	tests.EvalObjectsWithLog(t, "location", "https://auth.example.com/", rw.Header().Get("Location"), []string{})
+}
 
 func TestInjectUserChallenges(t *testing.T) {
 	var testcases = []struct {
