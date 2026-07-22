@@ -70,6 +70,8 @@ func (p *Portal) handleHTTPApps(ctx context.Context, w http.ResponseWriter, r *h
 		}
 	}
 
+	assetContent := rebaseAppAssetContent(asset.Content, asset.ContentType, appName, rr.Upstream.BasePath)
+
 	w.Header().Set("Content-Type", asset.ContentType)
 	w.Header().Set("Etag", asset.Checksum)
 	w.Header().Set("Cache-Control", "max-age=7200")
@@ -80,13 +82,26 @@ func (p *Portal) handleHTTPApps(ctx context.Context, w http.ResponseWriter, r *h
 		}
 	}
 	w.WriteHeader(http.StatusOK)
+	io.WriteString(w, assetContent)
+	return nil
+}
 
-	if (strings.HasSuffix(assetPath, "/") || strings.HasSuffix(assetPath, "/index.html") || strings.Count(assetPath, "/") >= 3 || strings.HasSuffix(assetPath, "/new")) && rr.Upstream.BasePath != "/auth/" {
-		assetContent := strings.ReplaceAll(asset.Content, "/auth/"+appName, rr.Upstream.BasePath+appName)
-		io.WriteString(w, assetContent)
-		return nil
+func rebaseAppAssetContent(content, contentType, appName, basePath string) string {
+	if basePath == "/auth/" {
+		return content
 	}
 
-	io.WriteString(w, asset.Content)
-	return nil
+	switch contentType {
+	case "application/javascript", "application/json", "image/svg+xml", "text/css", "text/html", "text/plain":
+	default:
+		return content
+	}
+
+	defaultAppPath := "/auth/" + appName
+	activeAppPath := strings.TrimSuffix(basePath, "/") + "/" + appName
+	content = strings.ReplaceAll(content, defaultAppPath, activeAppPath)
+
+	defaultAppPathEscaped := strings.ReplaceAll(defaultAppPath, "/", `\/`)
+	activeAppPathEscaped := strings.ReplaceAll(activeAppPath, "/", `\/`)
+	return strings.ReplaceAll(content, defaultAppPathEscaped, activeAppPathEscaped)
 }
