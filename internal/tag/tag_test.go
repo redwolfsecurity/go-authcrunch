@@ -41,6 +41,7 @@ import (
 	"github.com/greenpau/go-authcrunch/pkg/authz/validator"
 	"github.com/greenpau/go-authcrunch/pkg/credentials"
 	"github.com/greenpau/go-authcrunch/pkg/identity"
+	identity_fact_bag "github.com/greenpau/go-authcrunch/pkg/identity/fact_bag"
 	"github.com/greenpau/go-authcrunch/pkg/identity/qr"
 	"github.com/greenpau/go-authcrunch/pkg/idp"
 	"github.com/greenpau/go-authcrunch/pkg/idp/oauth"
@@ -456,6 +457,71 @@ func TestTagCompliance(t *testing.T) {
 			name:  "test identity.APIKey struct",
 			entry: &identity.APIKey{},
 			opts:  &Options{},
+		},
+		{
+			name:  "test fact_bag.Identity_Instance struct",
+			entry: &identity_fact_bag.Identity_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Name_Definition struct",
+			entry: &identity_fact_bag.Name_Definition{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Email_Address_Definition struct",
+			entry: &identity_fact_bag.Email_Address_Definition{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Authentication_Provider_Organization struct",
+			entry: &identity_fact_bag.Authentication_Provider_Organization{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Address_Definition struct",
+			entry: &identity_fact_bag.Address_Definition{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Password_Instance struct",
+			entry: &identity_fact_bag.Password_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Public_Key_Instance struct",
+			entry: &identity_fact_bag.Public_Key_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.API_Key_Instance struct",
+			entry: &identity_fact_bag.API_Key_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.MFA_Token_Instance struct",
+			entry: &identity_fact_bag.MFA_Token_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.MFA_Device_Definition struct",
+			entry: &identity_fact_bag.MFA_Device_Definition{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Tag_Definition struct",
+			entry: &identity_fact_bag.Tag_Definition{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Authentication_Lockout struct",
+			entry: &identity_fact_bag.Authentication_Lockout{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Registration_Instance struct",
+			entry: &identity_fact_bag.Registration_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
 		},
 		{
 			name:  "test authn.PortalConfig struct",

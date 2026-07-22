@@ -21,6 +21,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/greenpau/go-authcrunch/pkg/identity"
+	identity_fact_bag "github.com/greenpau/go-authcrunch/pkg/identity/fact_bag"
 	"github.com/greenpau/go-authcrunch/pkg/requests"
 	"go.uber.org/zap"
 )
@@ -290,6 +291,35 @@ func (sa *Authenticator) GetUser(r *requests.Request) error {
 	sa.mux.Lock()
 	defer sa.mux.Unlock()
 	return sa.db.GetUser(r)
+}
+
+// Identity_Fact_Bag_Get retrieves and projects one local identity while the store lock is held.
+func (sa *Authenticator) Identity_Fact_Bag_Get(r *requests.Request) (*identity_fact_bag.Identity_Instance, error) {
+	sa.mux.Lock()
+	defer sa.mux.Unlock()
+	if err := sa.db.GetUser(r); err != nil {
+		return nil, err
+	}
+	source, valid := r.Response.Payload.(*identity.User)
+	if !valid || source == nil {
+		return nil, fmt.Errorf("local identity response payload is not an identity user")
+	}
+	return identity_fact_bag.Identity_Instance_Create(source)
+}
+
+// Identity_Fact_Bag_List projects all local identities while the store lock is held.
+func (sa *Authenticator) Identity_Fact_Bag_List() ([]*identity_fact_bag.Identity_Instance, error) {
+	sa.mux.Lock()
+	defer sa.mux.Unlock()
+	result := make([]*identity_fact_bag.Identity_Instance, 0, len(sa.db.Users))
+	for _, source := range sa.db.Users {
+		identity_instance, err := identity_fact_bag.Identity_Instance_Create(source)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, identity_instance)
+	}
+	return result, nil
 }
 
 // DeleteUser delete a specific user from database.

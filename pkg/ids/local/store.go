@@ -21,6 +21,7 @@ import (
 	"github.com/greenpau/go-authcrunch/pkg/authn/enums/operator"
 	"github.com/greenpau/go-authcrunch/pkg/authn/icons"
 	"github.com/greenpau/go-authcrunch/pkg/errors"
+	identity_fact_bag "github.com/greenpau/go-authcrunch/pkg/identity/fact_bag"
 	"github.com/greenpau/go-authcrunch/pkg/requests"
 	"go.uber.org/zap"
 )
@@ -261,6 +262,22 @@ func (b *IdentityStore) FetchUserData(username string, emailAddress string) (map
 		return nil, fmt.Errorf("authenticator is nil")
 	}
 	return b.authenticator.FetchUserData(username, emailAddress)
+}
+
+// Identity_Fact_Bag_Get retrieves one sanitized FF identity projection.
+func (b *IdentityStore) Identity_Fact_Bag_Get(r *requests.Request) (*identity_fact_bag.Identity_Instance, error) {
+	if b.authenticator == nil {
+		return nil, fmt.Errorf("authenticator is nil")
+	}
+	return b.authenticator.Identity_Fact_Bag_Get(r)
+}
+
+// Identity_Fact_Bag_List retrieves all sanitized FF identity projections.
+func (b *IdentityStore) Identity_Fact_Bag_List() ([]*identity_fact_bag.Identity_Instance, error) {
+	if b.authenticator == nil {
+		return nil, fmt.Errorf("authenticator is nil")
+	}
+	return b.authenticator.Identity_Fact_Bag_List()
 }
 
 // GetMetadata returns metadata for the IdentityStore.
