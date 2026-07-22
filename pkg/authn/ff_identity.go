@@ -104,12 +104,12 @@ func (p *Portal) ff_identity_read_error_log(request_record *requests.Request, re
 }
 
 func (p *Portal) ff_identity_current_get(writer http.ResponseWriter, request_record *requests.Request, parsed_user *user.User) error {
-	store, session_user, err := p.ff_identity_store_get(request_record, parsed_user)
+	store, err := p.ff_identity_store_get(parsed_user)
 	if err != nil {
 		return err
 	}
-	request_record.User.Username = session_user.Claims.Subject
-	request_record.User.Email = session_user.Claims.Email
+	request_record.User.Username = parsed_user.Claims.Subject
+	request_record.User.Email = parsed_user.Claims.Email
 	identity_instance, err := store.Identity_Fact_Bag_Get(request_record)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func (p *Portal) ff_identity_current_get(writer http.ResponseWriter, request_rec
 }
 
 func (p *Portal) ff_identity_list_get(writer http.ResponseWriter, request_record *requests.Request, parsed_user *user.User) error {
-	store, _, err := p.ff_identity_store_get(request_record, parsed_user)
+	store, err := p.ff_identity_store_get(parsed_user)
 	if err != nil {
 		return err
 	}
@@ -129,23 +129,26 @@ func (p *Portal) ff_identity_list_get(writer http.ResponseWriter, request_record
 	return ff_identity_json_write(writer, identity_list)
 }
 
-func (p *Portal) ff_identity_store_get(request_record *requests.Request, parsed_user *user.User) (ff_identity_store, *user.User, error) {
+func (p *Portal) ff_identity_store_get(parsed_user *user.User) (ff_identity_store, error) {
 	if parsed_user == nil || parsed_user.Claims == nil {
-		return nil, nil, errors.New("authenticated identity claims are unavailable")
+		return nil, errors.New("authenticated identity claims are unavailable")
 	}
-	session_user, err := p.sessions.Get(parsed_user.Claims.ID)
-	if err != nil {
-		return nil, nil, err
+	realm := strings.TrimSpace(parsed_user.GetClaimValueByField("realm"))
+	if realm == "" {
+		realm = strings.TrimSpace(parsed_user.Authenticator.Realm)
 	}
-	identity_store := p.getIdentityStoreByRealm(session_user.Authenticator.Realm)
+	if realm == "" {
+		return nil, errors.New("authenticated identity realm is unavailable")
+	}
+	identity_store := p.getIdentityStoreByRealm(realm)
 	if identity_store == nil {
-		return nil, nil, errors.New("authenticated identity store is unavailable")
+		return nil, errors.New("authenticated identity store is unavailable")
 	}
 	store, valid := identity_store.(ff_identity_store)
 	if !valid {
-		return nil, nil, errors.New("authenticated identity store does not support FF identity projection")
+		return nil, errors.New("authenticated identity store does not support FF identity projection")
 	}
-	return store, session_user, nil
+	return store, nil
 }
 
 func ff_identity_json_write(writer http.ResponseWriter, value any) error {

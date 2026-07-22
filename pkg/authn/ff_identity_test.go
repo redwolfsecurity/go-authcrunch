@@ -37,9 +37,6 @@ const ff_identity_test_session_id = "ff-identity-test-session-000000000001"
 
 func Test_FF_Identity_Read(t *testing.T) {
 	portal, administrator_user, regular_user := ff_identity_test_portal_create(t)
-	if err := portal.sessions.Add(ff_identity_test_session_id, administrator_user); err != nil {
-		t.Fatalf("administrator session add: %v", err)
-	}
 	parsed_user := administrator_user.Clone()
 	request_record := requests.NewRequest()
 	request_record.Response.Authenticated = true
@@ -141,7 +138,7 @@ func ff_identity_test_session_user_create(t *testing.T, user_name string, user_c
 	t.Helper()
 	result, err := user.NewUser(map[string]interface{}{
 		"jti": ff_identity_test_session_id, "sub": user_name, "email": user_contact_email,
-		"roles": role_list, "exp": time.Now().Add(time.Hour).Unix(),
+		"roles": role_list, "realm": "local", "exp": time.Now().Add(time.Hour).Unix(),
 	})
 	if err != nil {
 		t.Fatalf("session user create: %v", err)
