@@ -18,13 +18,32 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/greenpau/go-authcrunch/pkg/requests"
 	"github.com/greenpau/go-authcrunch/pkg/user"
+	addrutil "github.com/greenpau/go-authcrunch/pkg/util/addr"
 )
 
-func (p *Portal) handleAPIRefreshToken(_ context.Context, w http.ResponseWriter, _ *http.Request, rr *requests.Request, _ *user.User) error {
+func (p *Portal) handleAPIRefreshToken(_ context.Context, w http.ResponseWriter, r *http.Request, rr *requests.Request, _ *user.User) error {
+	if strings.Contains(r.Header.Get("Accept"), "text/html") {
+		base_path := rr.Upstream.BasePath
+		if base_path == "" {
+			base_path = "/"
+		}
+		if !strings.HasSuffix(base_path, "/") {
+			base_path += "/"
+		}
+		w.Header().Add("Set-Cookie", p.cookie.GetDeleteAccessTokenCookie(addrutil.GetSourceHost(r)))
+		w.Header().Add("Set-Cookie", p.cookie.GetDeleteRefreshTokenCookie(base_path))
+		login_location := base_path + "login?redirect_url=" + url.QueryEscape(base_path+"profile/")
+		rr.Response.Code = http.StatusSeeOther
+		http.Redirect(w, r, login_location, rr.Response.Code)
+		return nil
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	rr.Response.Code = http.StatusOK
 	resp := make(map[string]interface{})

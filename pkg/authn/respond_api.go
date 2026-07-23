@@ -28,6 +28,12 @@ import (
 func (p *Portal) handleAPI(ctx context.Context, w http.ResponseWriter, r *http.Request, rr *requests.Request) error {
 	p.disableClientCache(w)
 	p.injectSessionID(ctx, w, r, rr)
+	is_browser_refresh_request := r.Method == http.MethodGet &&
+		strings.HasSuffix(r.URL.Path, "/api/refresh_token") &&
+		strings.Contains(r.Header.Get("Accept"), "text/html")
+	if is_browser_refresh_request {
+		return p.handleAPIRefreshToken(ctx, w, r, rr, nil)
+	}
 
 	p.logger.Debug(
 		"Received API request",
