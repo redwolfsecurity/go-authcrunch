@@ -38,7 +38,7 @@ func (p *Portal) ServeHTTP(ctx context.Context, w http.ResponseWriter, r *http.R
 	rr.Response.RedirectTokenName = p.cookie.RefererCookieName
 	switch {
 	case strings.Contains(r.URL.Path, "/ff/"):
-		return p.ff_identity_request_handle(ctx, w, r, rr)
+		return p.ff_request_handle(ctx, w, r, rr)
 	case strings.Contains(r.URL.Path, "/api/"):
 		return p.handleAPI(ctx, w, r, rr)
 	case strings.Contains(r.URL.Path, "/qrcode/"):

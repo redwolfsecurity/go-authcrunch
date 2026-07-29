@@ -54,6 +54,7 @@ import (
 	"github.com/greenpau/go-authcrunch/pkg/redirects"
 	"github.com/greenpau/go-authcrunch/pkg/registry"
 	"github.com/greenpau/go-authcrunch/pkg/requests"
+	session_fact_bag "github.com/greenpau/go-authcrunch/pkg/session/fact_bag"
 	"github.com/greenpau/go-authcrunch/pkg/sso"
 	"github.com/greenpau/go-authcrunch/pkg/system"
 	"github.com/greenpau/go-authcrunch/pkg/tagging"
@@ -521,6 +522,11 @@ func TestTagCompliance(t *testing.T) {
 		{
 			name:  "test fact_bag.Registration_Instance struct",
 			entry: &identity_fact_bag.Registration_Instance{},
+			opts:  &Options{DisableTagMismatch: true},
+		},
+		{
+			name:  "test fact_bag.Session_Instance struct",
+			entry: &session_fact_bag.Session_Instance{},
 			opts:  &Options{DisableTagMismatch: true},
 		},
 		{
