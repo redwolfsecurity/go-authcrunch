@@ -63,7 +63,25 @@ func (p *Portal) ff_session_request_handle(ctx context.Context, writer http.Resp
 }
 
 func (p *Portal) ff_session_current_get(writer http.ResponseWriter, request_record *requests.Request, parsed_user *user.User, timestamp_current time.Time) error {
-	session_instance, err := session_fact_bag.Session_Instance_Create(request_record, parsed_user, timestamp_current)
+	store, err := p.ff_identity_store_get(parsed_user)
+	if err != nil {
+		return err
+	}
+	request_record.User.Username = parsed_user.Claims.Subject
+	request_record.User.Email = parsed_user.Claims.Email
+	identity_instance, err := store.Identity_Fact_Bag_Get(request_record)
+	if err != nil {
+		return err
+	}
+	session_instance, err := session_fact_bag.Session_Instance_Create(
+		request_record,
+		parsed_user,
+		identity_instance.Identity_ID,
+		identity_instance.URI,
+		identity_instance.User_Name,
+		identity_instance.User_Contact_Email,
+		timestamp_current,
+	)
 	if err != nil {
 		return err
 	}

@@ -22,6 +22,7 @@ import (
 	"testing"
 	"time"
 
+	identity_fact_bag "github.com/greenpau/go-authcrunch/pkg/identity/fact_bag"
 	"github.com/greenpau/go-authcrunch/pkg/requests"
 	session_fact_bag "github.com/greenpau/go-authcrunch/pkg/session/fact_bag"
 )
@@ -32,6 +33,14 @@ func Test_FF_Session_Read(t *testing.T) {
 	request_record.Upstream.SessionID = ff_identity_test_session_id
 	request_record.Response.Authenticated = true
 	timestamp_current := time.Now().UTC()
+	identity_writer := httptest.NewRecorder()
+	if err := portal.ff_identity_current_get(identity_writer, requests.NewRequest(), administrator_user); err != nil {
+		t.Fatalf("current identity get: %v", err)
+	}
+	var current_identity identity_fact_bag.Identity_Instance
+	if err := json.Unmarshal(identity_writer.Body.Bytes(), &current_identity); err != nil {
+		t.Fatalf("current identity decode: %v", err)
+	}
 
 	current_writer := httptest.NewRecorder()
 	if err := portal.ff_session_current_get(current_writer, request_record, administrator_user, timestamp_current); err != nil {
@@ -50,8 +59,14 @@ func Test_FF_Session_Read(t *testing.T) {
 	if !current.Is_Authenticated {
 		t.Fatal("current session is not authenticated")
 	}
-	if current.Identity_URI != "identity/instance/administrator" {
+	if current.Identity_URI != current_identity.URI {
 		t.Fatalf("current session identity_uri is %q", current.Identity_URI)
+	}
+	if current.Identity_ID != current_identity.Identity_ID {
+		t.Fatalf("current session identity_id is %q", current.Identity_ID)
+	}
+	if current.User_Name != current_identity.User_Name {
+		t.Fatalf("current session user_name is %q", current.User_Name)
 	}
 	if current.Expires_ISO_8601 == "" {
 		t.Fatal("current session expiry timestamp is absent")

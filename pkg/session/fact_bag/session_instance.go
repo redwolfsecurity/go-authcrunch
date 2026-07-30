@@ -24,13 +24,10 @@ import (
 	"github.com/greenpau/go-authcrunch/pkg/user"
 )
 
-const (
-	session_instance_mime_type  = "session/instance"
-	identity_instance_mime_type = "identity/instance"
-)
+const session_instance_mime_type = "session/instance"
 
 // Session_Instance_Create projects one authenticated authcrunch request into a sanitized FF session fact bag.
-func Session_Instance_Create(request_record *requests.Request, parsed_user *user.User, timestamp_current time.Time) (*Session_Instance, error) {
+func Session_Instance_Create(request_record *requests.Request, parsed_user *user.User, identity_id string, identity_uri string, user_name string, user_contact_email string, timestamp_current time.Time) (*Session_Instance, error) {
 	if request_record == nil {
 		return nil, errors.New("session request record is nil")
 	}
@@ -44,9 +41,13 @@ func Session_Instance_Create(request_record *requests.Request, parsed_user *user
 	if session_id == "" {
 		return nil, errors.New("session id is empty")
 	}
-	identity_id := strings.TrimSpace(parsed_user.Claims.Subject)
+	identity_id = strings.TrimSpace(identity_id)
 	if identity_id == "" {
 		return nil, errors.New("session identity id is empty")
+	}
+	identity_uri = strings.TrimSpace(identity_uri)
+	if identity_uri == "" {
+		return nil, errors.New("session identity uri is empty")
 	}
 	if timestamp_current.IsZero() {
 		timestamp_current = time.Now().UTC()
@@ -63,15 +64,11 @@ func Session_Instance_Create(request_record *requests.Request, parsed_user *user
 		URI:              fact_bag_uri_create(session_instance_mime_type, session_id),
 		Is_Authenticated: true,
 		Identity_ID:      identity_id,
-		Identity_URI:     fact_bag_uri_create(identity_instance_mime_type, identity_id),
+		Identity_URI:     identity_uri,
 	}
 
-	if user_name := strings.TrimSpace(parsed_user.Claims.Name); user_name != "" {
-		result.User_Name = user_name
-	} else {
-		result.User_Name = identity_id
-	}
-	result.User_Contact_Email = strings.TrimSpace(parsed_user.Claims.Email)
+	result.User_Name = strings.TrimSpace(user_name)
+	result.User_Contact_Email = strings.TrimSpace(user_contact_email)
 	result.Role_List = string_list_nonempty_create(parsed_user.Claims.Roles)
 	sort.Strings(result.Role_List)
 	result.Authentication_Realm = strings.TrimSpace(parsed_user.Authenticator.Realm)

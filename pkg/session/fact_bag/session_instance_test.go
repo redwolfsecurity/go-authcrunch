@@ -38,7 +38,15 @@ func Test_Session_Instance_Create(t *testing.T) {
 	request_record.Upstream.SessionID = "ff-session-test-000000000000000001"
 	request_record.Response.Authenticated = true
 
-	session_instance, err := Session_Instance_Create(request_record, parsed_user, timestamp_current)
+	session_instance, err := Session_Instance_Create(
+		request_record,
+		parsed_user,
+		"1ae0d114-d319-4220-9c0b-a183f9464f05",
+		"identity/instance/1ae0d114-d319-4220-9c0b-a183f9464f05",
+		"administrator",
+		"administrator@localhost",
+		timestamp_current,
+	)
 	if err != nil {
 		t.Fatalf("session instance create: %v", err)
 	}
@@ -48,8 +56,11 @@ func Test_Session_Instance_Create(t *testing.T) {
 	if session_instance.URI != "session/instance/ff-session-test-000000000000000001" {
 		t.Fatalf("uri is %q", session_instance.URI)
 	}
-	if session_instance.Identity_URI != "identity/instance/administrator" {
+	if session_instance.Identity_URI != "identity/instance/1ae0d114-d319-4220-9c0b-a183f9464f05" {
 		t.Fatalf("identity_uri is %q", session_instance.Identity_URI)
+	}
+	if session_instance.User_Name != "administrator" {
+		t.Fatalf("user_name is %q", session_instance.User_Name)
 	}
 	if session_instance.User_Contact_Email != "administrator@localhost" {
 		t.Fatalf("user_contact_email is %q", session_instance.User_Contact_Email)
